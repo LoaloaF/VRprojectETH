@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMobileMenu();
 });
 
+// Global variable to track if we're in navigation mode
+let isNavigating = false;
+
 // Navigation functionality
 function initializeNavigation() {
     const navbar = document.querySelector('.navbar');
@@ -64,13 +67,28 @@ function initializeSmoothScrolling() {
                 const targetElement = document.getElementById(targetId);
                 
                 if (targetElement) {
-                    const navHeight = document.querySelector('.navbar').offsetHeight;
-                    const targetPosition = targetElement.offsetTop - navHeight;
-                    
-                    window.scrollTo({
-                        top: targetPosition,
-                        behavior: 'smooth'
+                    // Set navigation flag and reset parallax transforms temporarily
+                    isNavigating = true;
+                    const parallaxSections = document.querySelectorAll('.parallax-section');
+                    parallaxSections.forEach(section => {
+                        section.style.setProperty('--parallax-offset', '0px');
                     });
+                    
+                    // Small delay to let the transform take effect
+                    setTimeout(() => {
+                        const navHeight = document.querySelector('.navbar').offsetHeight;
+                        const targetPosition = targetElement.offsetTop - navHeight;
+                        
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Re-enable parallax after scroll animation completes
+                        setTimeout(() => {
+                            isNavigating = false;
+                        }, 800); // Smooth scroll usually takes about 500-800ms
+                    }, 50);
                 }
             }
         });
@@ -107,24 +125,27 @@ function initializeScrollEffects() {
     window.addEventListener('scroll', () => {
         const scrolled = window.pageYOffset;
         
-        // Parallax effect for blue sections (motivation and thesis)
-        const parallaxSections = document.querySelectorAll('.parallax-section');
-        parallaxSections.forEach(section => {
-            const rect = section.getBoundingClientRect();
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-            const windowHeight = window.innerHeight;
-            
-            // Only apply parallax when section is in viewport
-            if (rect.bottom >= 0 && rect.top <= windowHeight) {
-                const parallaxSpeed = 0.3;
-                // Calculate relative to when section starts being visible
-                const sectionVisibleStart = sectionTop - windowHeight;
-                const relativeScroll = Math.max(0, scrolled - sectionVisibleStart);
-                const yPos = -(relativeScroll * parallaxSpeed);
-                section.style.setProperty('--parallax-offset', `${yPos}px`);
-            }
-        });
+        // Only apply parallax when not navigating
+        if (!isNavigating) {
+            // Parallax effect for blue sections (motivation and thesis)
+            const parallaxSections = document.querySelectorAll('.parallax-section');
+            parallaxSections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                const windowHeight = window.innerHeight;
+                
+                // Only apply parallax when section is in viewport
+                if (rect.bottom >= 0 && rect.top <= windowHeight) {
+                    const parallaxSpeed = 0.3;
+                    // Calculate relative to when section starts being visible
+                    const sectionVisibleStart = sectionTop - windowHeight;
+                    const relativeScroll = Math.max(0, scrolled - sectionVisibleStart);
+                    const yPos = -(relativeScroll * parallaxSpeed);
+                    section.style.setProperty('--parallax-offset', `${yPos}px`);
+                }
+            });
+        }
     });
 }
 
