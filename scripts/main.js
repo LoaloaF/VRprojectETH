@@ -67,28 +67,32 @@ function initializeSmoothScrolling() {
                 const targetElement = document.getElementById(targetId);
                 
                 if (targetElement) {
-                    // Set navigation flag and reset parallax transforms temporarily
+                    // Set navigation flag to temporarily disable parallax updates
                     isNavigating = true;
-                    const parallaxSections = document.querySelectorAll('.parallax-section');
-                    parallaxSections.forEach(section => {
-                        section.style.setProperty('--parallax-offset', '0px');
+                    
+                    // Temporarily disable transitions to prevent jarring (only for motivation section)
+                    const motivationSection = document.querySelector('#motivation.parallax-section');
+                    if (motivationSection) {
+                        motivationSection.style.transition = 'none';
+                        motivationSection.style.setProperty('--parallax-offset', '0px');
+                    }
+                    
+                    const navHeight = document.querySelector('.navbar').offsetHeight;
+                    const targetPosition = targetElement.offsetTop - navHeight;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
                     });
                     
-                    // Small delay to let the transform take effect
+                    // Re-enable parallax and transitions after scroll animation completes
                     setTimeout(() => {
-                        const navHeight = document.querySelector('.navbar').offsetHeight;
-                        const targetPosition = targetElement.offsetTop - navHeight;
-                        
-                        window.scrollTo({
-                            top: targetPosition,
-                            behavior: 'smooth'
-                        });
-                        
-                        // Re-enable parallax after scroll animation completes
-                        setTimeout(() => {
-                            isNavigating = false;
-                        }, 800); // Smooth scroll usually takes about 500-800ms
-                    }, 50);
+                        // Re-enable transitions (only for motivation section)
+                        if (motivationSection) {
+                            motivationSection.style.transition = 'transform 0.2s ease-out';
+                        }
+                        isNavigating = false;
+                    }, 1000); // Give time for scroll to complete
                 }
             }
         });
@@ -123,30 +127,38 @@ function initializeScrollEffects() {
     
     // Simple scroll animations and parallax effects
     window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        
         // Only apply parallax when not navigating
         if (!isNavigating) {
-            // Parallax effect for blue sections (motivation and thesis)
-            const parallaxSections = document.querySelectorAll('.parallax-section');
-            parallaxSections.forEach(section => {
-                const rect = section.getBoundingClientRect();
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.offsetHeight;
-                const windowHeight = window.innerHeight;
-                
-                // Only apply parallax when section is in viewport
-                if (rect.bottom >= 0 && rect.top <= windowHeight) {
-                    const parallaxSpeed = 0.3;
-                    // Calculate relative to when section starts being visible
-                    const sectionVisibleStart = sectionTop - windowHeight;
-                    const relativeScroll = Math.max(0, scrolled - sectionVisibleStart);
-                    const yPos = -(relativeScroll * parallaxSpeed);
-                    section.style.setProperty('--parallax-offset', `${yPos}px`);
-                }
-            });
+            updateParallaxOffsets();
         }
     });
+}
+
+// Function to update parallax offsets based on current scroll position
+function updateParallaxOffsets() {
+    const scrolled = window.pageYOffset;
+    
+    // Parallax effect only for motivation section
+    const motivationSection = document.querySelector('#motivation.parallax-section');
+    if (motivationSection) {
+        const rect = motivationSection.getBoundingClientRect();
+        const sectionTop = motivationSection.offsetTop;
+        const windowHeight = window.innerHeight;
+        
+        // Calculate parallax offset based on how much the section has been scrolled
+        // Use a simpler calculation that's more predictable
+        const scrollProgress = (scrolled - sectionTop + windowHeight) / windowHeight;
+        
+        // Only apply parallax when section is visible and user has scrolled past it
+        if (scrollProgress > 0 && scrollProgress < 3) { // Apply effect in a reasonable range
+            const parallaxSpeed = 0.2; // Reduced speed for smoother effect
+            const yPos = -(scrollProgress * windowHeight * parallaxSpeed);
+            motivationSection.style.setProperty('--parallax-offset', `${yPos}px`);
+        } else if (scrollProgress <= 0) {
+            // Reset when section is not reached yet
+            motivationSection.style.setProperty('--parallax-offset', '0px');
+        }
+    }
 }
 
 // Mobile menu functionality

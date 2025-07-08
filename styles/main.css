@@ -233,7 +233,7 @@ p {
 /* Parallax effect for blue sections */
 .parallax-section {
     transform: translateY(var(--parallax-offset, 0px));
-    transition: transform 0.1s ease-out;
+    transition: transform 0.2s ease-out;
 }
 
 /* Section Styles */
